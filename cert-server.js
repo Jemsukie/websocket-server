@@ -11,23 +11,26 @@ const server = https.createServer({
   });
   
   // Create WebSocket server using the secure https server
-  const wss = new WebSocket.Server({ server });
+  const wss = new WebSocket.Server({ server, port: 8080 });
   
   // Handle WebSocket connections
-  wss.on('connection', (ws) => {
-    console.log('Client connected');
+  wss.on('connection', socket => {
+    console.log('New client connected!');
   
-    ws.on('message', (message) => {
-      console.log('received: %s', message);
-      ws.send(`Hello, you sent -> ${message}`);
+    // Listen for messages from clients
+    socket.on('message', message => {
+      console.log(`Received message: ${message}`);
+  
+      // Send a response back to all connected clients
+      wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(`Server received: ${message}`);
+        }
+      });
     });
   
-    ws.on('close', () => {
+    // Handle connection close
+    socket.on('close', () => {
       console.log('Client disconnected');
     });
-  });
-  
-  // Start the HTTPS server and WebSocket server
-  server.listen(8080, '192.168.5.52',() => {
-    console.log('WebSocket Secure (wss://) server is running on https://192.168.5.52:8080');
   });
