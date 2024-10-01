@@ -1,4 +1,6 @@
 const WebSocket = require('ws');
+const https = require('https'); // Import the https module
+const fs = require('fs'); // Import the fs module to read the certificate files
 const os = require('os');
 const net = require('net');
 
@@ -25,27 +27,40 @@ function isValidIP(ip) {
 const customIP = process.argv[2]; // Get the 3rd argument (index 2)
 let localIP = isValidIP(customIP) ? customIP : getLocalIP();
 
-const server = new WebSocket.Server({ port: 8080 });
+// Read the certificate and key files
+const options = {
+    cert: fs.readFileSync('cert/server.cert'), // Update with your actual path
+    key: fs.readFileSync('cert/server.key'),   // Update with your actual path
+};
 
-server.on('connection', socket => {
+// Create an HTTPS server
+const httpsServer = https.createServer(options);
+
+// Create a WebSocket server
+const wss = new WebSocket.Server({ server: httpsServer });
+
+wss.on('connection', socket => {
     console.log('New client connected!');
-  
+
     // Listen for messages from clients
     socket.on('message', message => {
-      console.log(`Received message: ${message}`);
-  
-      // Send a response back to all connected clients
-      server.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(`Server received: ${message}`);
-        }
-      });
+        console.log(`Received message: ${message}`);
+
+        // Send a response back to all connected clients
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(`Server received: ${message}`);
+            }
+        });
     });
-  
+
     // Handle connection close
     socket.on('close', () => {
-      console.log('Client disconnected');
+        console.log('Client disconnected');
     });
-  });
+});
 
-console.log(`WebSocket server running on ws://${localIP}:8080`);
+// Start the HTTPS server on port 8080
+httpsServer.listen(8080, () => {
+    console.log(`WebSocket server running on wss://${localIP}:8080`);
+});
