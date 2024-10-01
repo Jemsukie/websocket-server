@@ -6,8 +6,8 @@ const fs = require('fs'); // Import the fs module to read the certificate files
 
 // Read SSL certificate files (replace with your actual file paths)
 const server = https.createServer({
-    cert: fs.readFileSync('path/to/server.cert'),  // For self-signed cert: server.cert or localhost.pem
-    key: fs.readFileSync('path/to/server.key')     // For self-signed cert: server.key or localhost-key.pem
+    cert: fs.readFileSync('cert/server.cert'),  // For self-signed cert: server.cert or localhost.pem
+    key: fs.readFileSync('cert/server.key')     // For self-signed cert: server.key or localhost-key.pem
   });
   
   // Create WebSocket server using the secure https server
