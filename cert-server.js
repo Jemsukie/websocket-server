@@ -28,6 +28,6 @@ const server = https.createServer({
   });
   
   // Start the HTTPS server and WebSocket server
-  server.listen(8080, () => {
-    console.log('WebSocket Secure (wss://) server is running on https://localhost:8080');
+  server.listen(8080, '192.168.5.52',() => {
+    console.log('WebSocket Secure (wss://) server is running on https://192.168.5.52:8080');
   });
