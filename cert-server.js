@@ -1,3 +1,8 @@
+const WebSocket = require('ws');
+const https = require('https'); // Import the https module
+const fs = require('fs'); // Import the fs module to read the certificate files
+// const os = require('os');
+// const net = require('net');
 
 // Read SSL certificate files (replace with your actual file paths)
 const server = https.createServer({
