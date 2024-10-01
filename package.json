@@ -5,13 +5,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "local-start": "node local-server.js"
+    "local-start": "node local-server.js",
+    "cert-start": "node cert-server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "https": "^1.0.0",
     "ws": "^8.18.0"
   }
 }
