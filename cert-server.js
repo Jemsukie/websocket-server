@@ -1,33 +1,67 @@
 const WebSocket = require('ws');
-const https = require('https'); // Import the https module
-const fs = require('fs'); // Import the fs module to read the certificate files
-// const os = require('os');
-// const net = require('net');
+const https = require('https');
+const fs = require('fs');
+const os = require('os');
+const net = require('net');
 
-// Read SSL certificate files (replace with your actual file paths)
-const server = https.createServer({
-    cert: fs.readFileSync('cert/server.cert'),  // For self-signed cert: server.cert or localhost.pem
-    key: fs.readFileSync('cert/server.key')     // For self-signed cert: server.key or localhost-key.pem
-  });
-  
-  // Create WebSocket server using the secure https server
-  const wss = new WebSocket.Server({ server });
-  
-  // Handle WebSocket connections
-  wss.on('connection', (ws) => {
-    console.log('Client connected');
-  
-    ws.on('message', (message) => {
-      console.log('received: %s', message);
-      ws.send(`Hello, you sent -> ${message}`);
+// Function to get the local IP address
+function getLocalIP() {
+    const networkInterfaces = os.networkInterfaces();
+    for (const interfaceName in networkInterfaces) {
+        const addresses = networkInterfaces[interfaceName];
+        for (const address of addresses) {
+            if (address.family === 'IPv4' && !address.internal) {
+                return address.address;
+            }
+        }
+    }
+    return '127.0.0.1'; // Fallback to localhost
+}
+
+// Function to validate the given IP address
+function isValidIP(ip) {
+    return net.isIP(ip) !== 0; // returns 0 if invalid
+}
+
+// Get the command-line argument for IP address
+const customIP = process.argv[2]; // Get the 3rd argument (index 2)
+let localIP = isValidIP(customIP) ? customIP : getLocalIP();
+
+// Read SSL certificate and key
+const serverOptions = {
+    cert: fs.readFileSync('cert/server.cert'),  // Path to your certificate
+    key: fs.readFileSync('cert/server.key')    // Path to your private key
+};
+
+// Create an HTTPS server
+const httpsServer = https.createServer(serverOptions);
+
+// Create the WebSocket server on top of the HTTPS server
+const wss = new WebSocket.Server({ server: httpsServer });
+
+// Set up WebSocket connection handling
+wss.on('connection', socket => {
+    console.log('New client connected!');
+
+    // Listen for messages from clients
+    socket.on('message', message => {
+        console.log(`Received message: ${message}`);
+
+        // Send a response back to all connected clients
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(`Server received: ${message}`);
+            }
+        });
     });
-  
-    ws.on('close', () => {
-      console.log('Client disconnected');
+
+    // Handle connection close
+    socket.on('close', () => {
+        console.log('Client disconnected');
     });
-  });
-  
-  // Start the HTTPS server and WebSocket server
-  server.listen(8080, '192.168.5.52',() => {
-    console.log('WebSocket Secure (wss://) server is running on https://192.168.5.52:8080');
-  });
+});
+
+// Start the HTTPS server to listen on port 8080
+httpsServer.listen(8080, localIP, () => {
+    console.log(`WebSocket server running on wss://${localIP}:8080`);
+});
